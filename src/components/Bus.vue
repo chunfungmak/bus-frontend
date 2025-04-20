@@ -88,10 +88,15 @@
         <n-step :title="prev.label" v-for="(prev, j) in item.prev2" :key="j">
           <template #default>
             <div
-              v-if="prev.fare"
-              style="font-size: 13px; margin-bottom: 2px; margin-top: -5px"
+              v-if="prev.fare || prev.distance"
+              style="font-size: 13px; margin-bottom: 2px; margin-top: -5px; display: flex; gap: 5px;"
             >
-              {{ this.$t("fare") }}: {{ prev.fare }}
+              <span v-if="prev.fare">
+                {{ this.$t("fare") }}: {{ prev.fare }}
+              </span>
+              <span v-if="prev.distance">
+                {{ this.$t("distance") }}: {{ prev.distance }}
+              </span>
             </div>
             {{
               prev.eta[0]
@@ -104,10 +109,15 @@
         <n-step :title="item.stop">
           <template #default>
             <div
-              v-if="item.fare"
-              style="font-size: 13px; margin-bottom: 10px; margin-top: -5px"
+              v-if="item.fare || item.distance"
+              style="font-size: 13px; margin-bottom: 10px; margin-top: -5px; display: flex; gap: 10px;"
             >
-              {{ this.$t("fare") }}: {{ item.fare }}
+              <span v-if="item.fare">
+                {{ this.$t("fare") }}: {{ item.fare }}
+              </span>
+              <span v-if="item.distance">
+                {{ this.$t("distance") }}: {{ item.distance }}
+              </span>
             </div>
             <template v-if="item.eta.length == 0">
               {{ this.$t("status.no_bus") }}
@@ -150,6 +160,7 @@ import {
 } from "@/service/Utils.js";
 import fareData from "@/service/additional/FARE_BUS-FARE_optimized.json";
 import routeData from "@/service/additional/FARE_BUS-ROUTE_optimized.json";
+import stopData from "@/service/additional/STOP_BUS-STOP_optimized.json";
 
 export default {
   components: {
@@ -161,6 +172,8 @@ export default {
   data() {
     return {
       loading: false,
+      userLocation: null,
+      locationError: null,
 
       formatLeft,
       formatTime,
@@ -184,6 +197,7 @@ export default {
       loadingBar: null,
       fareData,
       routeData,
+      stopData,
     };
   },
   // do when this component has loaded
@@ -278,10 +292,65 @@ export default {
       const fareInfo = this.fareData.find(
         (f) => f.RI === routeInfo.RI && f.RS === direction && f.S === stop
       );
-      return fareInfo ? fareInfo.P : null;
+      return fareInfo;
+    },
+    calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radius of the earth in km
+      const dLat = this.deg2rad(lat2 - lat1);
+      const dLon = this.deg2rad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // Distance in km
+      return distance;
+    },
+    deg2rad(deg) {
+      return deg * (Math.PI / 180);
+    },
+    async getUserLocation() {
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+        this.userLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        this.locationError = null;
+      } catch (error) {
+        this.locationError = error.message;
+        console.error('Error getting location:', error);
+      }
+    },
+    getStopDistance(stopId) {
+      if (!this.userLocation) return null;
+      
+      const stop = this.stopData.find(s => s.I === stopId);
+      console.log(stopId);
+      
+      if (!stop) return null;
+      
+      const distance = this.calculateDistance(
+        this.userLocation.lat,
+        this.userLocation.lng,
+        stop.X,
+        stop.Y
+      );
+      
+      if (distance < 1) {
+        return (distance * 1000).toFixed(0) + ' m';
+      } else {
+        return distance.toFixed(2) + ' km';
+      }
     },
     setSelected: async function () {
       this.loading = true;
+      
+      if (!this.userLocation) {
+        await this.getUserLocation();
+      }
 
       let a = [];
 
@@ -311,8 +380,6 @@ export default {
           );
 
           // Get fare for the previous stop
-          console.log(k[0].value.co);
-          
           const prevFare = this.getFare(
             k[0].value.co,
             k[0].value.route,
@@ -320,11 +387,14 @@ export default {
             +k[0].value.seq
           );
 
+          const distance = this.getStopDistance(prevFare.SI);
+
           prev2.push({
             seq: k[0].value.seq,
             label: k[0].value.label,
             eta,
-            fare: prevFare ? `$${parseFloat(prevFare).toFixed(1)}` : null,
+            fare: prevFare ? `$${parseFloat(prevFare.P).toFixed(1)}` : null,
+            distance: distance
           });
         }
         if (!e.collapse) {
@@ -365,7 +435,8 @@ export default {
           stop: e.routeStop[0].label,
           eta,
           prev2,
-          fare: fare ? `$${parseFloat(fare).toFixed(1)}` : null,
+          fare: fare ? `$${parseFloat(fare.P).toFixed(1)}` : null,
+          distance: this.getStopDistance(fare.SI),
           location: {
             allLeft,
             seq: allLeft.indexOf(Math.min(...allLeft)) + 1,

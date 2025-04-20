@@ -25,5 +25,6 @@
     "status.1": "About to arrive",
     "status.2": "May have already left",
 
-    "fare": "Fare"
+    "fare": "Fare",
+    "distance": "Distance"
 }
