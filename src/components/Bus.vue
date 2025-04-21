@@ -89,7 +89,13 @@
           <template #default>
             <div
               v-if="prev.fare || prev.distance"
-              style="font-size: 13px; margin-bottom: 2px; margin-top: -5px; display: flex; gap: 5px;"
+              style="
+                font-size: 13px;
+                margin-bottom: 2px;
+                margin-top: -5px;
+                display: flex;
+                gap: 5px;
+              "
             >
               <span v-if="prev.fare">
                 {{ this.$t("fare") }}: {{ prev.fare }}
@@ -110,7 +116,12 @@
           <template #default>
             <div
               v-if="item.fare || item.distance"
-              style="font-size: 13px; margin-bottom: 10px; margin-top: -5px; display: flex; gap: 10px;"
+              style="
+                font-size: 13px;
+                margin-top: -5px;
+                display: flex;
+                gap: 10px;
+              "
             >
               <span v-if="item.fare">
                 {{ this.$t("fare") }}: {{ item.fare }}
@@ -120,20 +131,26 @@
               </span>
             </div>
             <template v-if="item.eta.length == 0">
-              {{ this.$t("status.no_bus") }}
+              <div style="margin-top: 3px">
+                {{ this.$t("status.no_bus") }}
+              </div>
             </template>
-            <n-timeline>
-              <n-timeline-item
-                type="success"
-                :title="formatLeft(eta.time, refreshCountup)"
-                :time="
-                  formatTime(eta.time) +
-                  ` ${this.$t(eta.co)} ${getLangRmk(eta)}`
-                "
-                v-for="(eta, k) in item.eta"
-                :key="k"
-              />
-            </n-timeline>
+            <template v-else>
+              <div style="margin-top: 10px">
+                <n-timeline>
+                  <n-timeline-item
+                    type="success"
+                    :title="formatLeft(eta.time, refreshCountup)"
+                    :time="
+                      formatTime(eta.time) +
+                      ` ${this.$t(eta.co)} ${getLangRmk(eta)}`
+                    "
+                    v-for="(eta, k) in item.eta"
+                    :key="k"
+                  />
+                </n-timeline>
+              </div>
+            </template>
           </template>
         </n-step>
       </n-steps>
@@ -288,7 +305,9 @@ export default {
     },
     getFare: function (co, route, direction, stop) {
       // Find route ID from route number
-      const routeInfo = this.routeData.find((r) => r.R === route && r.CO.includes(co));
+      const routeInfo = this.routeData.find(
+        (r) => r.R === route && r.CO.includes(co)
+      );
       if (!routeInfo) return null;
 
       // Find fare for this route and stop
@@ -303,8 +322,10 @@ export default {
       const dLon = this.deg2rad(lon2 - lon1);
       const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        Math.cos(this.deg2rad(lat1)) *
+          Math.cos(this.deg2rad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       const distance = R * c; // Distance in km
       return distance;
@@ -318,19 +339,19 @@ export default {
           (position) => {
             this.userLocation = {
               lat: position.coords.latitude,
-              lng: position.coords.longitude
+              lng: position.coords.longitude,
             };
             this.locationError = null;
             this.updateDistances();
           },
           (error) => {
             this.locationError = error.message;
-            console.error('Error watching location:', error);
+            console.error("Error watching location:", error);
           },
           {
             enableHighAccuracy: true,
             timeout: 5000,
-            maximumAge: 0
+            maximumAge: 0,
           }
         );
       }
@@ -343,8 +364,8 @@ export default {
     },
     updateDistances() {
       if (!this.userLocation) return;
-      
-      this.selected.forEach(item => {
+
+      this.selected.forEach((item) => {
         if (item.raw && item.raw[0]) {
           const fare = this.getFare(
             item.raw[0].co,
@@ -357,7 +378,7 @@ export default {
           }
         }
         if (item.prev2) {
-          item.prev2.forEach(prev => {
+          item.prev2.forEach((prev) => {
             if (prev.raw && prev.raw[0]) {
               const prevFare = this.getFare(
                 prev.raw[0].co,
@@ -375,28 +396,28 @@ export default {
     },
     getStopDistance(stopId) {
       if (!this.userLocation) return null;
-      
-      const stop = this.stopData.find(s => s.I === stopId);
+
+      const stop = this.stopData.find((s) => s.I === stopId);
       console.log(stopId);
-      
+
       if (!stop) return null;
-      
+
       const distance = this.calculateDistance(
         this.userLocation.lat,
         this.userLocation.lng,
         stop.X,
         stop.Y
       );
-      
+
       if (distance < 1) {
-        return (distance * 1000).toFixed(0) + ' m';
+        return (distance * 1000).toFixed(0) + " m";
       } else {
-        return distance.toFixed(2) + ' km';
+        return distance.toFixed(2) + " km";
       }
     },
     setSelected: async function () {
       this.loading = true;
-      
+
       let a = [];
 
       for (let j in this.$store.state.selected) {
@@ -439,7 +460,7 @@ export default {
             label: k[0].value.label,
             eta,
             fare: prevFare ? `$${parseFloat(prevFare.P).toFixed(1)}` : null,
-            distance: distance
+            distance: distance,
           });
         }
         if (!e.collapse) {
