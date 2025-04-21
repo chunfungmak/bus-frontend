@@ -174,6 +174,7 @@ export default {
       loading: false,
       userLocation: null,
       locationError: null,
+      locationWatchId: null,
 
       formatLeft,
       formatTime,
@@ -206,6 +207,8 @@ export default {
     await DataServices.getStopsList();
 
     this.$root.loading.close();
+
+    this.startLocationWatch();
 
     this.setSelected();
 
@@ -309,20 +312,66 @@ export default {
     deg2rad(deg) {
       return deg * (Math.PI / 180);
     },
-    async getUserLocation() {
-      try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
-        });
-        this.userLocation = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
-        this.locationError = null;
-      } catch (error) {
-        this.locationError = error.message;
-        console.error('Error getting location:', error);
+    startLocationWatch() {
+      if (navigator.geolocation) {
+        this.locationWatchId = navigator.geolocation.watchPosition(
+          (position) => {
+            this.userLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            this.locationError = null;
+            this.updateDistances();
+          },
+          (error) => {
+            this.locationError = error.message;
+            console.error('Error watching location:', error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
       }
+    },
+    stopLocationWatch() {
+      if (this.locationWatchId) {
+        navigator.geolocation.clearWatch(this.locationWatchId);
+        this.locationWatchId = null;
+      }
+    },
+    updateDistances() {
+      if (!this.userLocation) return;
+      
+      this.selected.forEach(item => {
+        if (item.raw && item.raw[0]) {
+          const fare = this.getFare(
+            item.raw[0].co,
+            item.raw[0].route,
+            item.raw[0].bound === "O" ? 1 : 2,
+            +item.raw[0].seq
+          );
+          if (fare) {
+            item.distance = this.getStopDistance(fare.SI);
+          }
+        }
+        if (item.prev2) {
+          item.prev2.forEach(prev => {
+            if (prev.raw && prev.raw[0]) {
+              const prevFare = this.getFare(
+                prev.raw[0].co,
+                prev.raw[0].route,
+                prev.raw[0].bound === "O" ? 1 : 2,
+                +prev.raw[0].seq
+              );
+              if (prevFare) {
+                prev.distance = this.getStopDistance(prevFare.SI);
+              }
+            }
+          });
+        }
+      });
     },
     getStopDistance(stopId) {
       if (!this.userLocation) return null;
@@ -348,10 +397,6 @@ export default {
     setSelected: async function () {
       this.loading = true;
       
-      if (!this.userLocation) {
-        await this.getUserLocation();
-      }
-
       let a = [];
 
       for (let j in this.$store.state.selected) {
@@ -498,6 +543,12 @@ export default {
         return [];
       return getStopsList(this.formData.sameRoute);
     },
+  },
+  beforeUnmount() {
+    this.stopLocationWatch();
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
   },
 };
 </script>
