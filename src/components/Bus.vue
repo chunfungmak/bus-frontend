@@ -220,8 +220,8 @@ export default {
   },
   // do when this component has loaded
   async mounted() {
-    await DataServices.getBusList();
-    await DataServices.getStopsList();
+    await DataServices.getBusList(this.$root.setStatus);
+    await DataServices.getStopsList(this.$root.setStatus);
 
     this.$root.loading.close();
 

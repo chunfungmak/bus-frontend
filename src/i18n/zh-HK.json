@@ -26,5 +26,8 @@
     "status.2": "可能已經離開",
 
     "fare": "車資",
-    "distance": "距離"
+    "distance": "距離",
+
+    "loading.bus": "正在取得巴士列表",
+    "loading.stop": "正在取得巴士站列表"
 }

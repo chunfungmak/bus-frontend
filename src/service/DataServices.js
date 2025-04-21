@@ -8,6 +8,7 @@ import store from "@/store";
 import { path, merge } from "./Utils";
 import { default as mtr_routes } from "./additional/mtr_routes.json";
 import { default as mtr_route_stops } from "./additional/mtr_route_stops.json";
+import i18n from "../i18n";
 
 export default new (class {
   direction = {
@@ -17,7 +18,8 @@ export default new (class {
 
   timeout = 7 * 1000 * 60 * 60 * 24;
 
-  async getBusList() {
+  async getBusList(setStatus) {
+    setStatus(i18n.global.t("loading.bus"));
     // check if the data outdated
     if (new Date() - store.state.lastUpd.busList > this.timeout) {
       let kmb = (await axios.get(process.env.VUE_APP_ROUTES_KMB)).data.data.map(
@@ -70,7 +72,8 @@ export default new (class {
     }
   }
 
-  async getStopsList() {
+  async getStopsList(setStatus) {
+    setStatus(i18n.global.t("loading.stop"));
     // check if the data outdated
     if (new Date() - store.state.lastUpd.stopsList > this.timeout) {
       let stopNameList = (await axios.get(process.env.VUE_APP_STOPS_KMB)).data

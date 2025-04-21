@@ -26,5 +26,8 @@
     "status.2": "May have already left",
 
     "fare": "Fare",
-    "distance": "Distance"
+    "distance": "Distance",
+
+    "loading.bus": "Getting Bus List",
+    "loading.stop": "Getting Stops List"
 }
