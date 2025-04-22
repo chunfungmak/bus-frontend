@@ -69,8 +69,12 @@ export default {
     const dialog = useDialog();
     const { t } = useI18n();
 
+    if (store.state.currentProfileId === "settings") {
+      store.commit("setCurrentProfile", "default");
+    }
+
     const currentTab = computed({
-      get: () => store.state.currentProfileId === "settings" ? "settings" : store.state.currentProfileId,
+      get: () => store.state.currentProfileId,
       set: (value) => {
         store.commit("setCurrentProfile", value);
       },
@@ -118,9 +122,7 @@ export default {
     };
 
     const handleTabChange = (name) => {
-      if (name !== "settings") {
-        store.commit("setCurrentProfile", name);
-      }
+      store.commit("setCurrentProfile", name);
     };
 
     onMounted(() => {

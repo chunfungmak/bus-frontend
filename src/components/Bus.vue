@@ -420,6 +420,11 @@ export default {
       }
     },
     setSelected: async function () {
+      if (this.currentProfile == null) {
+        this.selected = [];
+        return;
+      }
+
       this.loading = true;
 
       let a = [];

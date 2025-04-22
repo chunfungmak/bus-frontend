@@ -125,9 +125,7 @@ const store = createStore({
       state.profiles = profiles;
     },
     setCurrentProfile(state, id) {
-      if (state.profiles.find(p => p.id === id)) {
-        state.currentProfileId = id;
-      }
+      state.currentProfileId = id;
     }
   },
 });
