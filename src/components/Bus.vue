@@ -1,8 +1,6 @@
 <template>
   <!-- this is the custom componet -->
-
   <n-space vertical>
-    <ProfileTabs />
     <n-card size="small">
       <n-space vertical>
         <n-select
@@ -179,7 +177,6 @@ import {
 import fareData from "@/service/additional/FARE_BUS-FARE_optimized.json";
 import routeData from "@/service/additional/FARE_BUS-ROUTE_optimized.json";
 import stopData from "@/service/additional/STOP_BUS-STOP_optimized.json";
-import ProfileTabs from "./ProfileTabs.vue";
 
 export default {
   components: {
@@ -187,7 +184,6 @@ export default {
     Refresh,
     CaretDownSharp,
     CaretUpSharp,
-    ProfileTabs,
   },
   data() {
     return {

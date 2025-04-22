@@ -1,155 +1,169 @@
 <template>
-  <n-tabs
-    type="card"
-    v-model:value="currentProfileId"
-    @update:value="handleTabChange"
-    closable
-    @close="handleTabClose"
-  >
-    <n-tab-pane
-      v-for="profile in profiles"
-      :key="profile.id"
-      :name="profile.id"
-      :tab="profile.name"
-      :closable="profile.id !== 'default' && profile.id === currentProfileId"
+  <div class="profile-tabs">
+    <n-tabs
+      v-model:value="currentTab"
+      type="card"
+      closable
+      @close="handleClose"
+      @update:value="handleTabChange"
     >
-      <template #tab>
-        <n-space align="center" justify="center">
-          <div>
-            {{ profile.id === "default" ? this.$t("default") : profile.name }}
-          </div>
-          <div style="display: flex;" v-if="profile.id !== 'default' && profile.id === currentProfileId">
-            <n-button
-              text
-              style="font-size: 10px;"
-              @click.stop="handleRename(profile)"
-            >
-              <template #icon>
-                <n-icon><create-outline /></n-icon>
-              </template>
-            </n-button>
-          </div>
-        </n-space>
+      <template #prefix>
+        <n-button text @click="handleAddProfile">
+          <template #icon>
+            <n-icon><AddIcon /></n-icon>
+          </template>
+        </n-button>
       </template>
-    </n-tab-pane>
-    <template #prefix>
-      <n-button text @click="handleTabAdd">
-        <template #icon>
-          <n-icon><add /></n-icon>
+      <!-- Profile Tabs -->
+      <n-tab-pane
+        v-for="profile in profiles"
+        :key="profile.id"
+        :name="profile.id"
+        :tab="profile.name"
+        :closable="false"
+      >
+        <template #tab>
+          <div class="tab-content">
+            <span>{{ profile.name }}</span>
+          </div>
         </template>
-      </n-button>
-    </template>
-  </n-tabs>
+        <slot></slot>
+      </n-tab-pane>
+
+      <!-- Settings Tab -->
+      <n-tab-pane
+        name="settings"
+        :tab="$t('profile.settings')"
+        :closable="false"
+      >
+        <template #tab>
+          <div class="tab-content">
+            <n-icon><SettingsIcon /></n-icon>
+          </div>
+        </template>
+        <Settings />
+      </n-tab-pane>
+    </n-tabs>
+  </div>
 </template>
 
 <script>
-import { Add, CreateOutline } from "@vicons/ionicons5";
+import { ref, computed, onMounted } from "vue";
+import { useStore } from "vuex";
+import { Settings as SettingsIcon, Add as AddIcon } from "@vicons/ionicons5";
+import Sortable from "sortablejs";
+import SettingsComponent from "./Settings.vue";
 import { useDialog, NInput } from "naive-ui";
-import { h, ref } from "vue";
+import { h } from "vue";
+import { useI18n } from "vue-i18n";
 
 export default {
+  name: "ProfileTabs",
   components: {
-    Add,
-    CreateOutline,
+    Settings: SettingsComponent,
+    SettingsIcon,
+    AddIcon,
   },
   setup() {
+    const store = useStore();
     const dialog = useDialog();
-    return {
-      dialog,
-    };
-  },
-  computed: {
-    profiles() {
-      return this.$store.state.profiles;
-    },
-    currentProfileId: {
-      get() {
-        return this.$store.state.currentProfileId;
+    const { t } = useI18n();
+
+    const currentTab = computed({
+      get: () => store.state.currentProfileId === "settings" ? "settings" : store.state.currentProfileId,
+      set: (value) => {
+        store.commit("setCurrentProfile", value);
       },
-      set(value) {
-        this.$store.commit("setCurrentProfile", value);
-      },
-    },
-  },
-  methods: {
-    handleTabChange(value) {
-      this.$store.commit("setCurrentProfile", value);
-    },
-    handleTabClose(name) {
-      this.$store.commit("removeProfile", name);
-    },
-    handleTabAdd() {
+    });
+    const profiles = computed(() => store.state.profiles);
+
+    const handleAddProfile = () => {
       const inputRef = ref("");
 
-      this.dialog.create({
-        title: this.$t("profile.add"),
+      dialog.create({
+        title: t("profile.add"),
         content: () => {
           return h(NInput, {
             value: inputRef.value,
             onUpdateValue: (value) => {
               inputRef.value = value;
             },
-            placeholder: this.$t("profile.name"),
+            placeholder: t("profile.name"),
             onKeydown: (e) => {
               if (e.key === "Enter") {
-                if (inputRef.value) {
-                  this.$store.commit("addProfile", inputRef.value);
-                  this.dialog.destroyAll();
+                if (inputRef.value.trim()) {
+                  store.commit("addProfile", inputRef.value.trim());
+                  dialog.destroyAll();
                 }
               }
             },
           });
         },
-        positiveText: this.$t("confirm"),
-        negativeText: this.$t("cancel"),
+        positiveText: t("confirm"),
+        negativeText: t("cancel"),
         onPositiveClick: () => {
-          if (inputRef.value) {
-            this.$store.commit("addProfile", inputRef.value);
+          if (inputRef.value.trim()) {
+            store.commit("addProfile", inputRef.value.trim());
             return true;
           }
           return false;
         },
       });
-    },
-    handleRename(profile) {
-      const inputRef = ref(profile.name);
+    };
 
-      this.dialog.create({
-        title: this.$t("profile.rename"),
-        content: () => {
-          return h(NInput, {
-            value: inputRef.value,
-            onUpdateValue: (value) => {
-              inputRef.value = value;
-            },
-            placeholder: this.$t("profile.name"),
-            onKeydown: (e) => {
-              if (e.key === "Enter") {
-                if (inputRef.value) {
-                  this.$store.commit("renameProfile", {
-                    id: profile.id,
-                    name: inputRef.value,
-                  });
-                  this.dialog.destroyAll();
-                }
-              }
-            },
-          });
-        },
-        positiveText: this.$t("confirm"),
-        negativeText: this.$t("cancel"),
-        onPositiveClick: () => {
-          if (inputRef.value) {
-            this.$store.commit("renameProfile", {
-              id: profile.id,
-              name: inputRef.value,
-            });
-            return true;
-          }
-          return false;
-        },
-      });
-    },
+    const handleClose = (name) => {
+      if (profiles.value.length > 1) {
+        store.commit("removeProfile", name);
+      }
+    };
+
+    const handleTabChange = (name) => {
+      if (name !== "settings") {
+        store.commit("setCurrentProfile", name);
+      }
+    };
+
+    onMounted(() => {
+      const el = document.querySelector(".profile-list");
+      if (el) {
+        new Sortable(el, {
+          animation: 150,
+          onEnd: (evt) => {
+            const profiles = [...store.state.profiles];
+            const [removed] = profiles.splice(evt.oldIndex, 1);
+            profiles.splice(evt.newIndex, 0, removed);
+            store.commit("reorderProfiles", profiles);
+          },
+        });
+      }
+    });
+
+    return {
+      currentTab,
+      profiles,
+      handleAddProfile,
+      handleClose,
+      handleTabChange,
+    };
   },
 };
 </script>
+
+<style scoped>
+.profile-tabs {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.tab-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-profile-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+</style>

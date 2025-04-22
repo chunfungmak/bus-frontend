@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "serve": "NODE_OPTIONS=--openssl-legacy-provider vue-cli-service serve",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider vue-cli-service build",
+    "lint": "NODE_OPTIONS=--openssl-legacy-provider vue-cli-service lint"
   },
   "dependencies": {
     "@vicons/ionicons5": "^0.11.0",
@@ -15,6 +15,7 @@
     "localforage": "^1.10.0",
     "naive-ui": "^2.19.1",
     "register-service-worker": "^1.7.1",
+    "sortablejs": "^1.15.6",
     "vue": "^3.2.19",
     "vue-i18n": "^9.1.7",
     "vuex": "^4.0.2",

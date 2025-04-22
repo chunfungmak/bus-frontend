@@ -34,6 +34,10 @@
     "profile.add": "新增設定檔",
     "profile.rename": "重新命名設定檔",
     "profile.name": "設定檔名稱",
+    "profile.settings": "設定檔管理",
+    "profile.delete": "刪除設定檔",
+    "profile.delete.confirm": "確定要刪除這個設定檔嗎？",
+    "profile.reorder": "拖曳以重新排序設定檔",
     "confirm": "確認",
     "cancel": "取消",
 

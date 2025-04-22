@@ -10,8 +10,9 @@
             <Nav />
           </n-layout-header>
           <n-layout-content content-style="padding: .5rem;">
-            <!-- this is my custom component -->
-            <Bus />
+            <ProfileTabs>
+              <Bus />
+            </ProfileTabs>
           </n-layout-content>
         </n-layout>
       </n-space>
@@ -27,6 +28,7 @@
 // import my custom component
 import Bus from "@/components/Bus.vue";
 import Nav from "@/components/Nav.vue";
+import ProfileTabs from "@/components/ProfileTabs.vue";
 
 import { ElLoading } from "element-plus";
 
@@ -38,6 +40,7 @@ export default {
   components: {
     Bus,
     Nav,
+    ProfileTabs,
   },
   // this place is define the data (state) on this component
   data() {

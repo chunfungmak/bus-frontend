@@ -115,6 +115,15 @@ const store = createStore({
         profile.name = name;
       }
     },
+    reorderProfiles(state, { fromIndex, toIndex }) {
+      // Don't allow reordering the default profile
+      if (fromIndex === 0 || toIndex === 0) return;
+      
+      const profiles = [...state.profiles];
+      const [movedProfile] = profiles.splice(fromIndex, 1);
+      profiles.splice(toIndex, 0, movedProfile);
+      state.profiles = profiles;
+    },
     setCurrentProfile(state, id) {
       if (state.profiles.find(p => p.id === id)) {
         state.currentProfileId = id;
