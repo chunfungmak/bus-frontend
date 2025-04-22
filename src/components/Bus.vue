@@ -460,8 +460,9 @@ export default {
             k[0].value.bound,
             +k[0].value.seq
           );
+          
 
-          const distance = this.getStopDistance(prevFare.SI);
+          const distance = prevFare ? this.getStopDistance(prevFare.SI) : null;
 
           prev2.push({
             seq: k[0].value.seq,
@@ -510,7 +511,7 @@ export default {
           eta,
           prev2,
           fare: fare ? `$${parseFloat(fare.P).toFixed(1)}` : null,
-          distance: this.getStopDistance(fare.SI),
+          distance: fare ? this.getStopDistance(fare.SI) : null,
           location: {
             allLeft,
             seq: allLeft.indexOf(Math.min(...allLeft)) + 1,
