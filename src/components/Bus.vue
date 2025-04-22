@@ -303,7 +303,13 @@ export default {
       this.$store.commit("invertCollapseSelected", index);
       this.setSelected();
     },
-    getFare: function (co, route, direction, stop) {
+    getFare: function (co, route, dir, stop) {
+      let direction;
+      if (co === "KMB") {
+        direction = dir === "O" ? 1 : 2;
+      } else {
+        direction = dir === "O" ? 2 : 1;
+      }
       // Find route ID from route number
       const routeInfo = this.routeData.find(
         (r) => r.R === route && r.CO.includes(co)
@@ -370,7 +376,7 @@ export default {
           const fare = this.getFare(
             item.raw[0].co,
             item.raw[0].route,
-            item.raw[0].bound === "O" ? 1 : 2,
+            item.raw[0].bound,
             +item.raw[0].seq
           );
           if (fare) {
@@ -383,7 +389,7 @@ export default {
               const prevFare = this.getFare(
                 prev.raw[0].co,
                 prev.raw[0].route,
-                prev.raw[0].bound === "O" ? 1 : 2,
+                prev.raw[0].bound,
                 +prev.raw[0].seq
               );
               if (prevFare) {
@@ -449,7 +455,7 @@ export default {
           const prevFare = this.getFare(
             k[0].value.co,
             k[0].value.route,
-            k[0].value.bound === "O" ? 1 : 2,
+            k[0].value.bound,
             +k[0].value.seq
           );
 
@@ -489,7 +495,7 @@ export default {
         const fare = this.getFare(
           e.routeStop[0].co,
           e.routeStop[0].route,
-          e.routeStop[0].bound === "O" ? 1 : 2,
+          e.routeStop[0].bound,
           +e.routeStop[0].seq
         );
 
@@ -523,6 +529,75 @@ export default {
       this.sameRoute = getSameRoute(route);
       this.formData.sameRoute = null;
       this.formData.sameRouteStop = null;
+    },
+    stopsList: function (stopsList) {
+      if (!(stopsList && this.userLocation)) return;
+
+      if (stopsList.length === 0) return;
+
+      let nearestStop = stopsList[0];
+      let minDistance = Infinity;
+
+      for (const stop of stopsList) {
+        const fareInfo = this.getFare(
+          stop.value.co,
+          stop.value.route,
+          stop.value.bound,
+          +stop.value.seq
+        );
+        if (!fareInfo) continue;
+
+        const stopInfo = this.stopData.find((s) => s.I === fareInfo.SI);
+        if (!stopInfo) continue;
+
+        const distance = this.calculateDistance(
+          this.userLocation.lat,
+          this.userLocation.lng,
+          stopInfo.X,
+          stopInfo.Y
+        );
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestStop = stop;
+        }
+      }
+
+      this.formData.routeStop = nearestStop.value;
+    },
+    sameRouteStopList: function (sameRouteStopList) {
+      if (!(sameRouteStopList && this.userLocation)) return;
+
+      if (sameRouteStopList.length === 0) return;
+
+      let nearestStop = sameRouteStopList[0];
+      let minDistance = Infinity;
+
+      for (const stop of sameRouteStopList) {
+        const fareInfo = this.getFare(
+          stop.value.co,
+          stop.value.route,
+          stop.value.bound,
+          +stop.value.seq
+        );
+        if (!fareInfo) continue;
+
+        const stopInfo = this.stopData.find((s) => s.I === fareInfo.SI);
+        if (!stopInfo) continue;
+
+        const distance = this.calculateDistance(
+          this.userLocation.lat,
+          this.userLocation.lng,
+          stopInfo.X,
+          stopInfo.Y
+        );
+        console.log(stop.value, stopInfo, distance);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestStop = stop;
+        }
+      }
+
+      this.formData.sameRouteStop = nearestStop.value;
     },
     "$store.state.lang": function () {
       this.setSelected();
