@@ -9,7 +9,7 @@
     "r1.route": "Please select a bus route.",
     "r1.stop": "Please select a bus stop.",
     "r2.route": "Please select a multi company bus route.",
-    "r2.stop": "lease select a multi company bus stop.",
+    "r2.stop": "Please select a multi company bus stop.",
 
     "add.bus": "Add Bus",
     "refresh": "Refresh",
@@ -29,5 +29,13 @@
     "distance": "Distance",
 
     "loading.bus": "Getting Bus List",
-    "loading.stop": "Getting Stops List"
+    "loading.stop": "Getting Stops List",
+
+    "profile.add": "Add New Profile",
+    "profile.rename": "Rename Profile",
+    "profile.name": "Profile Name",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+
+    "default": "Default"
 }

@@ -2,6 +2,7 @@
   <!-- this is the custom componet -->
 
   <n-space vertical>
+    <ProfileTabs />
     <n-card size="small">
       <n-space vertical>
         <n-select
@@ -178,6 +179,7 @@ import {
 import fareData from "@/service/additional/FARE_BUS-FARE_optimized.json";
 import routeData from "@/service/additional/FARE_BUS-ROUTE_optimized.json";
 import stopData from "@/service/additional/STOP_BUS-STOP_optimized.json";
+import ProfileTabs from "./ProfileTabs.vue";
 
 export default {
   components: {
@@ -185,6 +187,7 @@ export default {
     Refresh,
     CaretDownSharp,
     CaretUpSharp,
+    ProfileTabs,
   },
   data() {
     return {
@@ -404,7 +407,6 @@ export default {
       if (!this.userLocation) return null;
 
       const stop = this.stopData.find((s) => s.I === stopId);
-      console.log(stopId);
 
       if (!stop) return null;
 
@@ -426,8 +428,8 @@ export default {
 
       let a = [];
 
-      for (let j in this.$store.state.selected) {
-        let e = this.$store.state.selected[j];
+      for (let j in this.currentProfile.selected) {
+        let e = this.currentProfile.selected[j];
         let prev2 = [];
         let allLeft = [];
         let eta = [];
@@ -524,6 +526,10 @@ export default {
   },
   // is the key (formData.route in this case) has changes do the function
   watch: {
+    currentProfile: function () {
+      this.selected = [];
+      this.setSelected();
+    },
     "formData.route": function (route) {
       this.formData.routeStop = null;
       this.sameRoute = getSameRoute(route);
@@ -590,7 +596,6 @@ export default {
           stopInfo.X,
           stopInfo.Y
         );
-        console.log(stop.value, stopInfo, distance);
         if (distance < minDistance) {
           minDistance = distance;
           nearestStop = stop;
@@ -638,6 +643,11 @@ export default {
       if (this.formData.sameRoute == "" || this.formData.sameRoute == null)
         return [];
       return getStopsList(this.formData.sameRoute);
+    },
+    currentProfile() {
+      return this.$store.state.profiles.find(
+        (p) => p.id === this.$store.state.currentProfileId
+      );
     },
   },
   beforeUnmount() {

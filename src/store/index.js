@@ -13,7 +13,7 @@ import localforage from "localforage";
 const store = createStore({
   // the state
   state: {
-    version: "1A08",
+    version: "1A09",
 
     lang: "zhHK",
     timerSwitch: true,
@@ -27,7 +27,14 @@ const store = createStore({
       stopsList: null,
     },
 
-    selected: [],
+    profiles: [
+      {
+        id: 'default',
+        name: 'Default',
+        selected: []
+      }
+    ],
+    currentProfileId: 'default'
   },
   // you can implement some function to help you set the state
   // call it using
@@ -61,8 +68,9 @@ const store = createStore({
     },
 
     addSelected(state, val) {
+      const currentProfile = state.profiles.find(p => p.id === state.currentProfileId);
       if (
-        state.selected.find(
+        currentProfile.selected.find(
           (e) =>
             e.routeStop[0].route == val.routeStop[0].route &&
             e.routeStop[0].bound == val.routeStop[0].bound &&
@@ -70,27 +78,97 @@ const store = createStore({
             e.routeStop[0].seq == val.routeStop[0].seq
         ) == null
       ) {
-        state.selected.push(JSON.parse(JSON.stringify(val)));
+        currentProfile.selected.push(JSON.parse(JSON.stringify(val)));
         val.success = true;
       }
     },
     removeSelected(state, index) {
-      state.selected.splice(index, 1);
+      const currentProfile = state.profiles.find(p => p.id === state.currentProfileId);
+      currentProfile.selected.splice(index, 1);
     },
     invertCollapseSelected(state, index){
-      state.selected[index].collapse = !state.selected[index].collapse;
+      const currentProfile = state.profiles.find(p => p.id === state.currentProfileId);
+      currentProfile.selected[index].collapse = !currentProfile.selected[index].collapse;
+    },
+    addProfile(state, name) {
+      const id = 'profile-' + Date.now();
+      state.profiles.push({
+        id,
+        name,
+        selected: []
+      });
+      state.currentProfileId = id;
+    },
+    removeProfile(state, id) {
+      if (id === 'default') return; // Prevent removing default profile
+      const index = state.profiles.findIndex(p => p.id === id);
+      if (index !== -1) {
+        state.profiles.splice(index, 1);
+        if (state.currentProfileId === id) {
+          state.currentProfileId = 'default';
+        }
+      }
+    },
+    renameProfile(state, { id, name }) {
+      const profile = state.profiles.find(p => p.id === id);
+      if (profile) {
+        profile.name = name;
+      }
+    },
+    setCurrentProfile(state, id) {
+      if (state.profiles.find(p => p.id === id)) {
+        state.currentProfileId = id;
+      }
     }
   },
 });
 
+// Handle version migration
 store.watch(
   (state) => state,
-  () => {
-    localforage.setItem("state", JSON.parse(JSON.stringify(store.state)));
+  async (newState) => {
+    // Save to localforage
+    await localforage.setItem("state", JSON.parse(JSON.stringify(newState)));
   },
   {
-    deep: true, //add this if u need to watch object properties change etc.
+    deep: true,
   }
 );
+
+// Handle initial state load and migration
+const initStore = async () => {
+  const savedState = await localforage.getItem("state");
+  
+  if (savedState) {
+    if (savedState.version === "1A08") {
+      // Migrate from 1A08 to 1A09
+      const migratedState = {
+        ...savedState,
+        version: "1A09",
+        profiles: [
+          {
+            id: 'default',
+            name: 'Default',
+            selected: savedState.selected || []
+          }
+        ],
+        currentProfileId: 'default'
+      };
+      
+      // Remove the old selected array since it's now part of profiles
+      delete migratedState.selected;
+      
+      store.replaceState(migratedState);
+      await localforage.setItem("state", JSON.parse(JSON.stringify(migratedState)));
+    } else if (savedState.version === "1A09") {
+      store.replaceState(savedState);
+    } else {
+      // If version is not recognized, reset to default state
+      await localforage.setItem("state", JSON.parse(JSON.stringify(store.state)));
+    }
+  }
+};
+
+initStore();
 
 export default store;

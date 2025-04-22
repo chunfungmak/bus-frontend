@@ -29,5 +29,13 @@
     "distance": "距離",
 
     "loading.bus": "正在取得巴士列表",
-    "loading.stop": "正在取得巴士站列表"
+    "loading.stop": "正在取得巴士站列表",
+
+    "profile.add": "新增設定檔",
+    "profile.rename": "重新命名設定檔",
+    "profile.name": "設定檔名稱",
+    "confirm": "確認",
+    "cancel": "取消",
+
+    "default": "預設"
 }

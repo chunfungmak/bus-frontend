@@ -3,20 +3,22 @@
   <!-- for more info abt naive-ui please read: https://www.naiveui.com/ -->
   <!-- <n-loading-bar-provider> -->
   <n-config-provider :theme="theme">
-    <n-space vertical size="large">
-      <n-layout>
-        <n-layout-header>
-          <Nav />
-        </n-layout-header>
-        <n-layout-content content-style="padding: .5rem;">
-          <!-- this is my custom component -->
-          <Bus />
-        </n-layout-content>
-      </n-layout>
-    </n-space>
+    <n-dialog-provider>
+      <n-space vertical size="large">
+        <n-layout>
+          <n-layout-header>
+            <Nav />
+          </n-layout-header>
+          <n-layout-content content-style="padding: .5rem;">
+            <!-- this is my custom component -->
+            <Bus />
+          </n-layout-content>
+        </n-layout>
+      </n-space>
 
-    <!-- this can help the body also have dark mode -->
-    <n-global-style />
+      <!-- this can help the body also have dark mode -->
+      <n-global-style />
+    </n-dialog-provider>
   </n-config-provider>
   <!-- </n-loading-bar-provider> -->
 </template>
