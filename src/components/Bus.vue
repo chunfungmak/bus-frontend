@@ -188,9 +188,6 @@ export default {
   data() {
     return {
       loading: false,
-      userLocation: null,
-      locationError: null,
-      locationWatchId: null,
 
       formatLeft,
       formatTime,
@@ -223,8 +220,6 @@ export default {
     await DataServices.getStopsList(this.$root.setStatus);
 
     this.$root.loading.close();
-
-    this.startLocationWatch();
 
     this.setSelected();
 
@@ -338,39 +333,11 @@ export default {
     deg2rad(deg) {
       return deg * (Math.PI / 180);
     },
-    startLocationWatch() {
-      if (navigator.geolocation) {
-        this.locationWatchId = navigator.geolocation.watchPosition(
-          (position) => {
-            this.userLocation = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-            this.locationError = null;
-            this.updateDistances();
-          },
-          (error) => {
-            this.locationError = error.message;
-            console.error("Error watching location:", error);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0,
-          }
-        );
-      }
-    },
-    stopLocationWatch() {
-      if (this.locationWatchId) {
-        navigator.geolocation.clearWatch(this.locationWatchId);
-        this.locationWatchId = null;
-      }
-    },
     updateDistances() {
-      if (!this.userLocation) return;
+      const location = this.$root.userLocation;
+      if (!location) return;
 
-      this.selected.forEach((item) => {
+      this.selected = this.selected.map((item) => {
         if (item.raw && item.raw[0]) {
           const fare = this.getFare(
             item.raw[0].co,
@@ -383,32 +350,35 @@ export default {
           }
         }
         if (item.prev2) {
-          item.prev2.forEach((prev) => {
-            if (prev.raw && prev.raw[0]) {
+          item.prev2 = item.prev2.map((prev) => {
+            if (item.raw && item.raw[0]) {
               const prevFare = this.getFare(
-                prev.raw[0].co,
-                prev.raw[0].route,
-                prev.raw[0].bound,
-                +prev.raw[0].seq
+                item.raw[0].co,
+                item.raw[0].route,
+                item.raw[0].bound,
+                +prev.seq
               );
               if (prevFare) {
                 prev.distance = this.getStopDistance(prevFare.SI);
               }
             }
+            return prev;
           });
         }
+        return item;
       });
     },
     getStopDistance(stopId) {
-      if (!this.userLocation) return null;
+      const location = this.$root.userLocation;
+      if (!location) return null;
 
       const stop = this.stopData.find((s) => s.I === stopId);
 
       if (!stop) return null;
 
       const distance = this.calculateDistance(
-        this.userLocation.lat,
-        this.userLocation.lng,
+        location.lat,
+        location.lng,
         stop.X,
         stop.Y
       );
@@ -461,7 +431,6 @@ export default {
             k[0].value.bound,
             +k[0].value.seq
           );
-          
 
           const distance = prevFare ? this.getStopDistance(prevFare.SI) : null;
 
@@ -539,7 +508,7 @@ export default {
       this.formData.sameRouteStop = null;
     },
     stopsList: function (stopsList) {
-      if (!(stopsList && this.userLocation)) return;
+      if (!(stopsList && this.$root.userLocation)) return;
 
       if (stopsList.length === 0) return;
 
@@ -559,8 +528,8 @@ export default {
         if (!stopInfo) continue;
 
         const distance = this.calculateDistance(
-          this.userLocation.lat,
-          this.userLocation.lng,
+          this.$root.userLocation.lat,
+          this.$root.userLocation.lng,
           stopInfo.X,
           stopInfo.Y
         );
@@ -573,7 +542,7 @@ export default {
       this.formData.routeStop = nearestStop.value;
     },
     sameRouteStopList: function (sameRouteStopList) {
-      if (!(sameRouteStopList && this.userLocation)) return;
+      if (!(sameRouteStopList && this.$root.userLocation)) return;
 
       if (sameRouteStopList.length === 0) return;
 
@@ -593,8 +562,8 @@ export default {
         if (!stopInfo) continue;
 
         const distance = this.calculateDistance(
-          this.userLocation.lat,
-          this.userLocation.lng,
+          this.$root.userLocation.lat,
+          this.$root.userLocation.lng,
           stopInfo.X,
           stopInfo.Y
         );
@@ -626,6 +595,11 @@ export default {
         };
       });
     },
+    "$root.userLocation": function (newLocation) {
+      if (newLocation) {
+        this.updateDistances();
+      }
+    },
   },
   // the data is computed
   // usually use for getting store state
@@ -653,7 +627,6 @@ export default {
     },
   },
   beforeUnmount() {
-    this.stopLocationWatch();
     if (this.timer) {
       clearInterval(this.timer);
     }

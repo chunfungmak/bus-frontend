@@ -35,6 +35,8 @@ import { ElLoading } from "element-plus";
 // this is the stuff for naive-ui darkTheme!
 import { darkTheme } from "naive-ui";
 
+import { computed } from 'vue';
+
 export default {
   // import my custom component to use inside current components (the top template area)
   components: {
@@ -50,6 +52,10 @@ export default {
       // this is the stuff for naive-ui darkTheme!
       darkTheme,
       theme: this.$store.state.darkMode ? darkTheme : null,
+      // Add geolocation state
+      userLocation: null,
+      locationError: null,
+      locationWatchId: null,
     };
   },
   created() {
@@ -58,11 +64,72 @@ export default {
       text: this.$t("loading"),
       background: "rgba(0, 0, 0, 0.7)",
     });
+    // Start watching location when app is created
+    this.startLocationWatch();
   },
   methods: {
     setStatus(status) {
       this.loading.setText(this.$t("loading") + (status ? " " + status : ""));
     },
+    startLocationWatch() {
+      if (navigator.geolocation) {
+        navigator.permissions.query({ name: 'geolocation' }).then((permissionStatus) => {
+          if (permissionStatus.state === 'granted') {
+            this.initializeGeolocation();
+          } else if (permissionStatus.state === 'prompt') {
+            this.initializeGeolocation();
+          } else {
+            this.locationError = 'Geolocation permission denied';
+            console.error('Geolocation permission denied');
+          }
+
+          permissionStatus.addEventListener('change', () => {
+            if (permissionStatus.state === 'granted') {
+              this.initializeGeolocation();
+            } else {
+              this.locationError = 'Geolocation permission denied';
+              console.error('Geolocation permission denied');
+              this.stopLocationWatch();
+            }
+          });
+        });
+      }
+    },
+    initializeGeolocation() {
+      this.locationWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+          this.userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          this.locationError = null;
+        },
+        (error) => {
+          this.locationError = error.message;
+          console.error('Error watching location:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+    },
+    stopLocationWatch() {
+      if (this.locationWatchId) {
+        navigator.geolocation.clearWatch(this.locationWatchId);
+        this.locationWatchId = null;
+      }
+    }
+  },
+  provide() {
+    return {
+      userLocation: computed(() => this.userLocation),
+      locationError: computed(() => this.locationError)
+    };
+  },
+  beforeUnmount() {
+    this.stopLocationWatch();
   },
   watch: {
     "$store.state.darkMode": function (val) {
